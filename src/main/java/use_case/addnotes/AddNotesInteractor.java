@@ -1,4 +1,4 @@
-// src/java/use_case/notes/AddNoteInteractor.java
+// src/java/use_case/addnotes/AddNotesInteractor.java
 package use_case.addnotes;
 
 import data_access.LandmarkDataAccessInterface;
@@ -7,6 +7,8 @@ import entity.Landmark;
 import entity.Note;
 import entity.User;
 
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 public class AddNotesInteractor implements AddNotesInputBoundary {
@@ -25,45 +27,64 @@ public class AddNotesInteractor implements AddNotesInputBoundary {
 
     @Override
     public void addNote(AddNotesInputData inputData) {
-        // 1. Basic validation
-        String content = inputData.getContent();
-        if (content == null || content.trim().isEmpty()) {
-            presenter.prepareFailView("Note cannot be empty.");
+        String username = inputData.getUsername();
+        String landmarkName = inputData.getLandmarkName();
+        String content = inputData.getContent() == null
+                ? ""
+                : inputData.getContent().trim();
+
+        if (content.isEmpty()) {
+            presenter.present(new AddNotesOutputData(
+                    username, landmarkName, "", "", "",
+                    new ArrayList<>(),
+                    "Note cannot be empty.", null
+            ));
             return;
         }
 
-        // 2. Load user
-        User user = userDAO.get(inputData.getUsername());
+        User user = userDAO.get(username);
         if (user == null) {
-            presenter.prepareFailView("User not found: " + inputData.getUsername());
+            presenter.present(new AddNotesOutputData(
+                    username, landmarkName, "", "", "",
+                    new ArrayList<>(),
+                    "User not found.", null
+            ));
             return;
         }
 
-        // 3. Load landmark (using your existing LandmarkDataAccessInterface)
-        Landmark landmark;
-        try {
-            landmark = landmarkDAO.findByName(inputData.getLandmarkName());
-        } catch (RuntimeException ex) {
-            presenter.prepareFailView("Landmark not found: " + inputData.getLandmarkName());
-            return;
-        }
+        Landmark landmark = landmarkDAO.findByName(landmarkName);
 
-        // 4. Create and attach Note
-        Note note = new Note(landmark, content);
-
-        // privateNotes list is final but mutable
-        List<Note> notes = user.getPrivateNotes();
-        notes.add(note);
-
-        // 5. Persist updated user
+        // create & attach new note
+        Note newNote = new Note(landmark, content);
+        user.getPrivateNotes().add(newNote);
         userDAO.save(user);
 
-        // 6. Notify presenter
-        AddNotesOutputData outputData = new AddNotesOutputData(
-                user.getUsername(),
+        // build list of THIS USER’s notes for THIS LANDMARK
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                .withZone(java.time.ZoneId.systemDefault());
+
+        List<AddNotesOutputData.NoteDTO> noteDTOs = new ArrayList<>();
+        user.getPrivateNotes().stream()
+                .filter(n -> n.getLandmark().getLandmarkName()
+                        .equalsIgnoreCase(landmarkName))
+                .forEach(n -> noteDTOs.add(
+                        new AddNotesOutputData.NoteDTO(
+                                fmt.format(n.getCreatedAt()),
+                                n.getContent()
+                        )
+                ));
+
+        var info = landmark.getLandmarkInfo();
+
+        presenter.present(new AddNotesOutputData(
+                username,
                 landmark.getLandmarkName(),
+                info.getDescription(),
+                info.getAddress(),
+                info.getOpenHours(),
+                noteDTOs,
+                null,
                 "Note added successfully."
-        );
-        presenter.prepareSuccessView(outputData);
+        ));
     }
 }

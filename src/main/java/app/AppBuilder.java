@@ -150,8 +150,12 @@ public class AppBuilder {
      */
     public AppBuilder addSelectedPlaceUseCase() {
         SelectedPlaceOutputBoundary spPresenter =
-                // constructor now also receives notesViewModel
-                new SelectedPlacePresenter(selectedPlaceViewModel, notesViewModel, viewManagerModel);
+                new SelectedPlacePresenter(
+                        selectedPlaceViewModel,
+                        notesViewModel,
+                        viewManagerModel,
+                        userDataAccessObject
+                );
 
         SelectedPlaceInputBoundary spInteractor =
                 new SelectedPlaceInteractor(landmarkDAO, userDataAccessObject, spPresenter);

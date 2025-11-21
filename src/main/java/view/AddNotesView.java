@@ -36,6 +36,11 @@ public class AddNotesView extends JPanel implements PropertyChangeListener {
     private JLabel imageLabel;
     private JLabel messageLabel;
 
+    // NEW: scrollable notes list
+    private DefaultListModel<String> notesListModel;
+    private JList<String> notesList;
+    private JLabel noNotesLabel;
+
     // ====== GOOGLE PLACES CONFIG (same as SelectedPlaceView) ======
     private static final String PLACES_API_KEY = "AIzaSyCk9bPskLw7eUI-_Y9G6tW8eDAE-iXI8Ms";
     private static final MediaType JSON
@@ -89,13 +94,15 @@ public class AddNotesView extends JPanel implements PropertyChangeListener {
             AddNotesState current = viewModel.getState();
             AddNotesState cleared = new AddNotesState();
 
-            // keep username + landmark so we still know where we came from,
-            // but clear content and messages
             cleared.setUsername(current.getUsername());
             cleared.setLandmarkName(current.getLandmarkName());
+            cleared.setLandmarkDescription(current.getLandmarkDescription());
+            cleared.setAddress(current.getAddress());
+            cleared.setOpenHours(current.getOpenHours());
             cleared.setContent("");
             cleared.setErrorMessage(null);
             cleared.setSuccessMessage(null);
+            cleared.setNotes(current.getNotes());  // keep notes list
 
             viewModel.setState(cleared);
             viewModel.firePropertyChange();
@@ -109,28 +116,36 @@ public class AddNotesView extends JPanel implements PropertyChangeListener {
             viewManagerModel.firePropertyChange();
         });
 
-
         bottomBar.add(backButton);
 
-        // ===== CENTER LAYOUT (left: form, right: landmark card) =====
+        // ===== CENTER LAYOUT (left: form + notes, right: landmark card) =====
         JPanel centerPanel = new JPanel(new GridLayout(1, 2));
         centerPanel.setBackground(Color.WHITE);
 
-        // -------- LEFT SIDE: description + Add button --------
+        // -------- LEFT SIDE: notes list + description + Add button --------
         JPanel leftPanel = new JPanel();
         leftPanel.setBackground(Color.WHITE);
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
         leftPanel.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 20));
 
-        JLabel noNotesLabel = new JLabel("No public notes yet!");
+        JLabel notesLabel = new JLabel("Notes");
+        notesLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        notesLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        noNotesLabel = new JLabel("No notes yet!");
         noNotesLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         noNotesLabel.setForeground(Color.GRAY);
         noNotesLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        leftPanel.add(noNotesLabel);
-        leftPanel.add(Box.createVerticalStrut(30));
+        // list + scroll
+        notesListModel = new DefaultListModel<>();
+        notesList = new JList<>(notesListModel);
+        notesList.setVisibleRowCount(6);
+        JScrollPane notesScroll = new JScrollPane(notesList);
+        notesScroll.setAlignmentX(Component.LEFT_ALIGNMENT);
+        notesScroll.setPreferredSize(new Dimension(350, 150));
 
-        // single description field
+        // typing area
         descriptionArea = new JTextArea(5, 25);
         descriptionArea.setLineWrap(true);
         descriptionArea.setWrapStyleWord(true);
@@ -153,6 +168,12 @@ public class AddNotesView extends JPanel implements PropertyChangeListener {
         messageLabel.setForeground(Color.RED);
         messageLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+        leftPanel.add(notesLabel);
+        leftPanel.add(Box.createVerticalStrut(5));
+        leftPanel.add(noNotesLabel);
+        leftPanel.add(Box.createVerticalStrut(5));
+        leftPanel.add(notesScroll);
+        leftPanel.add(Box.createVerticalStrut(20));
         leftPanel.add(descriptionScroll);
         leftPanel.add(Box.createVerticalStrut(10));
         leftPanel.add(addNoteButton);
@@ -229,6 +250,17 @@ public class AddNotesView extends JPanel implements PropertyChangeListener {
         addressLabel.setText(state.getAddress());
         hoursLabel.setText("Hours: " + state.getOpenHours());
 
+        // ===== UPDATE NOTES LIST (ONLY THIS USER’S NOTES) =====
+        notesListModel.clear();
+        if (state.getNotes() != null) {
+            for (AddNotesState.NoteVM n : state.getNotes()) {
+                // e.g. "2024-11-21 10:30 - My note text"
+                String line = n.createdAt + " - " + n.content;
+                notesListModel.addElement(line);
+            }
+        }
+        noNotesLabel.setVisible(notesListModel.isEmpty());
+
         // feedback messages
         if (state.getErrorMessage() != null) {
             messageLabel.setForeground(Color.RED);
@@ -259,7 +291,6 @@ public class AddNotesView extends JPanel implements PropertyChangeListener {
             return;
         }
 
-        // cancel previous worker if still running
         if (currentPhotoWorker != null && !currentPhotoWorker.isDone()) {
             currentPhotoWorker.cancel(true);
         }

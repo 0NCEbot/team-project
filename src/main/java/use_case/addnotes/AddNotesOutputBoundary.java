@@ -1,7 +1,6 @@
-// src/java/use_case/notes/AddNoteOutputBoundary.java
+// src/java/use_case/addnotes/AddNotesOutputBoundary.java
 package use_case.addnotes;
 
 public interface AddNotesOutputBoundary {
-    void prepareSuccessView(AddNotesOutputData outputData);
-    void prepareFailView(String errorMessage);
+    void present(AddNotesOutputData data);
 }
