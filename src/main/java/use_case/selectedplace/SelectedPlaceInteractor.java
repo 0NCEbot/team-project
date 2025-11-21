@@ -95,6 +95,37 @@ public class SelectedPlaceInteractor implements SelectedPlaceInputBoundary {
 
     @Override
     public void notes(SelectedPlaceInputData inputData) {
-        // to be implemented
+
+        // 1. Get the user
+        User user = userDAO.get(inputData.getUsername());
+        if (user == null) {
+            System.out.println("[NOTES] User not found: " + inputData.getUsername());
+            return;
+        }
+
+        // 2. Get the landmark
+        Landmark landmark;
+        try {
+            landmark = landmarkDAO.findByName(inputData.getLandmarkName());
+        } catch (RuntimeException ex) {
+            System.out.println("[NOTES] Landmark not found: " + inputData.getLandmarkName());
+            return;
+        }
+
+        // 3. Create a minimal SelectedPlaceOutputData for the presenter
+        // This is required because UI needs username + landmarkName to build the next view.
+        SelectedPlaceOutputData output = new SelectedPlaceOutputData(
+                user.getUsername(),
+                landmark.getLandmarkName(),
+                landmark.getLandmarkInfo().getDescription(),
+                landmark.getLandmarkInfo().getAddress(),
+                landmark.getLandmarkInfo().getOpenHours()
+        );
+
+        // 4. Tell Presenter to switch to NotesView
+        presenter.presentNotes(output);
+
+        System.out.println("[NOTES] Navigating to Notes view for " +
+                user.getUsername() + " @ " + landmark.getLandmarkName());
     }
 }

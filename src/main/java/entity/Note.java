@@ -9,8 +9,8 @@ public class Note {
     private final Instant createdAt;
     private Instant updatedAt;
 
-    public Note(String noteId, Landmark landmark, String content) {
-        this.noteId = noteId;
+    public Note(Landmark landmark, String content) {
+        this.noteId = landmark.getLandmarkName() + Instant.now();
         this.landmark = landmark;
         this.content = content;
         this.createdAt = Instant.now();

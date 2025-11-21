@@ -21,6 +21,11 @@ import interface_adapter.selectedplace.SelectedPlaceViewModel;
 import interface_adapter.signup.SignupController;
 import interface_adapter.signup.SignupPresenter;
 import interface_adapter.signup.SignupViewModel;
+// NEW imports for Notes
+import interface_adapter.addnotes.AddNotesController;
+import interface_adapter.addnotes.AddNotesPresenter;
+import interface_adapter.addnotes.AddNotesViewModel;
+
 import use_case.browselandmarks.BrowseLandmarksInputBoundary;
 import use_case.browselandmarks.BrowseLandmarksInteractor;
 import use_case.homescreen.HomescreenInputBoundary;
@@ -35,12 +40,19 @@ import use_case.selectedplace.SelectedPlaceOutputBoundary;
 import use_case.signup.SignupInputBoundary;
 import use_case.signup.SignupInteractor;
 import use_case.signup.SignupOutputBoundary;
+// NEW imports for Notes use case
+import use_case.addnotes.AddNotesInputBoundary;
+import use_case.addnotes.AddNotesInteractor;
+import use_case.addnotes.AddNotesOutputBoundary;
+
 import view.BrowseLandmarksView;
 import view.HomescreenView;
 import view.LoginView;
 import view.SelectedPlaceView;
 import view.SignupView;
 import view.ViewManager;
+// NEW Notes view
+import view.AddNotesView;
 
 import javax.swing.*;
 import java.awt.*;
@@ -57,7 +69,8 @@ public class AppBuilder {
     private final ViewManager viewManager =
             new ViewManager(cardPanel, cardLayout, viewManagerModel);
 
-    private LandmarkDataAccessInterface landmarkDAO = new JsonLandmarkDataAccessObject("minimal_landmarks.json");
+    private final LandmarkDataAccessInterface landmarkDAO =
+            new JsonLandmarkDataAccessObject("minimal_landmarks.json");
 
     private final UserDataAccessInterface userDataAccessObject =
             new JsonUserDataAccessObject("users.json", userFactory, landmarkDAO);
@@ -78,9 +91,15 @@ public class AppBuilder {
     private SelectedPlaceViewModel selectedPlaceViewModel;
     private SelectedPlaceView selectedPlaceView;
 
+    // NEW: notes VM + view
+    private AddNotesViewModel notesViewModel;
+    private AddNotesView notesView;
+
     // ---- use case controllers ----
     private SelectedPlaceController selectedPlaceController;
     private BrowseLandmarksController browseLandmarksController;
+    // NEW: notes controller
+    private AddNotesController notesController;
 
     public AppBuilder() {
         cardPanel.setLayout(cardLayout);
@@ -109,7 +128,15 @@ public class AppBuilder {
         return this;
     }
 
-    /** STEP 1 — Create ONLY SelectedPlaceView */
+    // NEW: Notes view (no use case yet)
+    public AppBuilder addNotesView() {
+        notesViewModel = new AddNotesViewModel();
+        notesView = new AddNotesView(notesViewModel, viewManagerModel);
+        cardPanel.add(notesView, notesView.getViewName());
+        return this;
+    }
+
+    /** Create ONLY SelectedPlaceView (no use case yet). */
     public AppBuilder addSelectedPlaceView() {
         selectedPlaceViewModel = new SelectedPlaceViewModel();
         selectedPlaceView = new SelectedPlaceView(selectedPlaceViewModel, viewManagerModel);
@@ -117,10 +144,14 @@ public class AppBuilder {
         return this;
     }
 
-    /** STEP 2 — Wire SelectedPlace Use Case + Controller */
+    /** Wire SelectedPlace Use Case + Controller.
+     *
+     *  NOTE: assumes notesViewModel is already created (call addNotesView() first).
+     */
     public AppBuilder addSelectedPlaceUseCase() {
         SelectedPlaceOutputBoundary spPresenter =
-                new SelectedPlacePresenter(selectedPlaceViewModel, viewManagerModel);
+                // constructor now also receives notesViewModel
+                new SelectedPlacePresenter(selectedPlaceViewModel, notesViewModel, viewManagerModel);
 
         SelectedPlaceInputBoundary spInteractor =
                 new SelectedPlaceInteractor(landmarkDAO, userDataAccessObject, spPresenter);
@@ -145,7 +176,7 @@ public class AppBuilder {
         browseLandmarksView = new BrowseLandmarksView(
                 browseLandmarksViewModel,
                 browseLandmarksController,
-                selectedPlaceController,     // now safe
+                selectedPlaceController,     // uses same controller for “select place”
                 viewManagerModel
         );
 
@@ -192,6 +223,19 @@ public class AppBuilder {
                 new LoginController(interactor);
 
         loginView.setLoginController(controller);
+        return this;
+    }
+
+    // NEW: Notes use case wiring (for Add Note button)
+    public AppBuilder addNotesUseCase() {
+        AddNotesOutputBoundary notesOutput =
+                new AddNotesPresenter(notesViewModel, viewManagerModel);
+
+        AddNotesInputBoundary notesInteractor =
+                new AddNotesInteractor(userDataAccessObject, landmarkDAO, notesOutput);
+
+        notesController = new AddNotesController(notesInteractor, notesViewModel);
+        notesView.setNotesController(notesController);
         return this;
     }
 
