@@ -136,7 +136,7 @@ public class SelectedPlaceView extends JPanel implements PropertyChangeListener 
         rightPanel.setBackground(Color.WHITE);
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
         // add right margin so it doesn't touch scrollbar
-        rightPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 40, 0));
+        rightPanel.setBorder(BorderFactory.createEmptyBorder(40, 0, 40, 40));
 
         imageLabel = new JLabel();
         // preferred size so the scroll pane/BoxLayout respects it
@@ -164,7 +164,6 @@ public class SelectedPlaceView extends JPanel implements PropertyChangeListener 
         hoursLabel = new JLabel();
         hoursLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         hoursLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        hoursLabel.setVerticalAlignment(SwingConstants.TOP);
 
         rightPanel.add(imageLabel);
         rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
@@ -175,26 +174,18 @@ public class SelectedPlaceView extends JPanel implements PropertyChangeListener 
         rightPanel.add(addressLabel);
         rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         rightPanel.add(hoursLabel);
-        rightPanel.add(Box.createVerticalGlue());
 
         centerPanel.add(leftPanel);
-
-        //wrap scroll in a panel with padding
-        JPanel scrollWrapper = new JPanel(new BorderLayout());
-        scrollWrapper.setBackground(Color.WHITE);
-        scrollWrapper.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 30)); // right padding
-
         JScrollPane scroll = new JScrollPane(
                 rightPanel,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED //change to AS_NEEDED to NEVER if want removed
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
         );
-        scroll.getVerticalScrollBar().setUnitIncrement(16); //speed of vertical scroll
-        scroll.getHorizontalScrollBar().setUnitIncrement(16); //speed of horizontal scroll
-        scroll.setBorder(null);
+        scroll.getVerticalScrollBar().setUnitIncrement(16); // smoother scrolling
+        // optional outer padding instead of default border
+        scroll.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 20));
 
-        scrollWrapper.add(scroll, BorderLayout.CENTER);
-        centerPanel.add(scrollWrapper);
+        centerPanel.add(scroll);
 
         add(topBar, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);
