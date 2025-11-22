@@ -179,7 +179,7 @@ public class SelectedPlaceView extends JPanel implements PropertyChangeListener 
         JScrollPane scroll = new JScrollPane(
                 rightPanel,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
         );
         scroll.getVerticalScrollBar().setUnitIncrement(16); // smoother scrolling
         // optional outer padding instead of default border
