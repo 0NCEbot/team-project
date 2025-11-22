@@ -177,7 +177,7 @@ public class SelectedPlaceView extends JPanel implements PropertyChangeListener 
 
         centerPanel.add(leftPanel);
 
-// Wrap scroll in a panel with padding
+        //wrap scroll in a panel with padding
         JPanel scrollWrapper = new JPanel(new BorderLayout());
         scrollWrapper.setBackground(Color.WHITE);
         scrollWrapper.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 30)); // right padding
@@ -185,10 +185,10 @@ public class SelectedPlaceView extends JPanel implements PropertyChangeListener 
         JScrollPane scroll = new JScrollPane(
                 rightPanel,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED //change to AS_NEEDED to NEVER if want removed
         );
         scroll.getVerticalScrollBar().setUnitIncrement(16); //speed of vertical scroll
-        scroll.getHorizontalScrollBar().setUnitIncrement(16); //speed of horizontal scoll
+        scroll.getHorizontalScrollBar().setUnitIncrement(16); //speed of horizontal scroll
         scroll.setBorder(null);
 
         scrollWrapper.add(scroll, BorderLayout.CENTER);
