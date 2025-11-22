@@ -33,33 +33,83 @@ public class AddNotesInteractor implements AddNotesInputBoundary {
                 ? ""
                 : inputData.getContent().trim();
 
-        if (content.isEmpty()) {
-            presenter.present(new AddNotesOutputData(
-                    username, landmarkName, "", "", "",
-                    new ArrayList<>(),
-                    "Note cannot be empty.", null
-            ));
-            return;
-        }
-
+        // First, fetch user & landmark (needed both for success and error cases)
         User user = userDAO.get(username);
         if (user == null) {
             presenter.present(new AddNotesOutputData(
-                    username, landmarkName, "", "", "",
+                    username,
+                    landmarkName,
+                    "",
+                    "",
+                    "",
                     new ArrayList<>(),
-                    "User not found.", null
+                    "User not found.",
+                    null
             ));
             return;
         }
 
         Landmark landmark = landmarkDAO.findByName(landmarkName);
+        if (landmark == null) {
+            presenter.present(new AddNotesOutputData(
+                    username,
+                    landmarkName,
+                    "",
+                    "",
+                    "",
+                    new ArrayList<>(),
+                    "Landmark not found.",
+                    null
+            ));
+            return;
+        }
+
+        // Build list of THIS USER’s notes for THIS LANDMARK
+        List<AddNotesOutputData.NoteDTO> noteDTOs = buildNoteDTOs(user, landmarkName);
+
+        // If content is empty => validation error, but KEEP existing notes/info
+        if (content.isEmpty()) {
+            var info = landmark.getLandmarkInfo();
+
+            presenter.present(new AddNotesOutputData(
+                    username,
+                    landmark.getLandmarkName(),
+                    info.getDescription(),
+                    info.getAddress(),
+                    info.getOpenHours(),
+                    noteDTOs,                    // <-- keep notes
+                    "Note cannot be empty.",     // error
+                    null                         // no success
+            ));
+            return;
+        }
+
+        // ===== SUCCESS PATH =====
 
         // create & attach new note
         Note newNote = new Note(landmark, content);
         user.getPrivateNotes().add(newNote);
         userDAO.save(user);
 
-        // build list of THIS USER’s notes for THIS LANDMARK
+        // rebuild notes list including the new one
+        noteDTOs = buildNoteDTOs(user, landmarkName);
+
+        var info = landmark.getLandmarkInfo();
+
+        presenter.present(new AddNotesOutputData(
+                username,
+                landmark.getLandmarkName(),
+                info.getDescription(),
+                info.getAddress(),
+                info.getOpenHours(),
+                noteDTOs,
+                null,
+                "Note added successfully."
+        ));
+    }
+
+    // helper to convert private notes -> DTOs
+    private List<AddNotesOutputData.NoteDTO> buildNoteDTOs(User user, String landmarkName) {
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
                 .withZone(java.time.ZoneId.systemDefault());
 
@@ -74,17 +124,6 @@ public class AddNotesInteractor implements AddNotesInputBoundary {
                         )
                 ));
 
-        var info = landmark.getLandmarkInfo();
-
-        presenter.present(new AddNotesOutputData(
-                username,
-                landmark.getLandmarkName(),
-                info.getDescription(),
-                info.getAddress(),
-                info.getOpenHours(),
-                noteDTOs,
-                null,
-                "Note added successfully."
-        ));
+        return noteDTOs;
     }
 }
