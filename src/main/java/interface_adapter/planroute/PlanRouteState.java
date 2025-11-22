@@ -21,10 +21,8 @@ public class PlanRouteState {
     private boolean manualMode = false;
     private String errorMessage = null;
 
-    // Default constructor
     public PlanRouteState() {}
 
-    // Copy constructor (optional but good practice)
     public PlanRouteState(PlanRouteState copy) {
         this.startLocation = copy.startLocation;
         this.destination = copy.destination;
@@ -35,61 +33,24 @@ public class PlanRouteState {
         this.errorMessage = copy.errorMessage;
     }
 
-    // ===== GETTERS & SETTERS =====
+    public String getStartLocation() { return startLocation; }
+    public void setStartLocation(String s) { this.startLocation = s; }
 
-    public String getStartLocation() {
-        return startLocation;
-    }
+    public String getDestination() { return destination; }
+    public void setDestination(String d) { this.destination = d; }
 
-    public void setStartLocation(String s) {
-        this.startLocation = s;
-    }
+    public List<StepVM> getSteps() { return steps; }
+    public void setSteps(List<StepVM> s) { this.steps = s; }
 
-    public String getDestination() {
-        return destination;
-    }
+    public String getTotalDistance() { return totalDistance; }
+    public void setTotalDistance(String d) { this.totalDistance = d; }
 
-    public void setDestination(String d) {
-        this.destination = d;
-    }
+    public String getTotalDuration() { return totalDuration; }
+    public void setTotalDuration(String d) { this.totalDuration = d; }
 
-    public List<StepVM> getSteps() {
-        return steps;
-    }
+    public boolean isManualMode() { return manualMode; }
+    public void setManualMode(boolean m) { this.manualMode = m; }
 
-    public void setSteps(List<StepVM> s) {
-        this.steps = s;
-    }
-
-    public String getTotalDistance() {
-        return totalDistance;
-    }
-
-    public void setTotalDistance(String d) {
-        this.totalDistance = d;
-    }
-
-    public String getTotalDuration() {
-        return totalDuration;
-    }
-
-    public void setTotalDuration(String d) {
-        this.totalDuration = d;
-    }
-
-    public boolean isManualMode() {
-        return manualMode;
-    }
-
-    public void setManualMode(boolean m) {
-        this.manualMode = m;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public void setErrorMessage(String e) {
-        this.errorMessage = e;
-    }
+    public String getErrorMessage() { return errorMessage; }
+    public void setErrorMessage(String e) { this.errorMessage = e; }
 }

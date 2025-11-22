@@ -1,4 +1,3 @@
-// PlanRouteViewModel.java
 package interface_adapter.planroute;
 
 import interface_adapter.ViewModel;

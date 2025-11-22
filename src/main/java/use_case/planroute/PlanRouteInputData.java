@@ -1,10 +1,10 @@
 package use_case.planroute;
 
 public class PlanRouteInputData {
+    private final String username;
     private final String startLocation;
     private final String destination;
-    private final String[] intermediateStops; // optional
-    private final String username;
+    private final String[] intermediateStops;
 
     public PlanRouteInputData(String username, String startLocation,
                               String destination, String[] intermediateStops) {

@@ -25,7 +25,6 @@ public class PlanRoutePresenter implements PlanRouteOutputBoundary {
         state.setDestination(outputData.getDestination());
         state.setManualMode(outputData.isManualMode());
 
-        // Convert steps to UI format
         List<PlanRouteState.StepVM> stepVMs = new ArrayList<>();
         for (PlanRouteOutputData.RouteStepDTO dto : outputData.getSteps()) {
             PlanRouteState.StepVM vm = new PlanRouteState.StepVM();
@@ -38,7 +37,6 @@ public class PlanRoutePresenter implements PlanRouteOutputBoundary {
         }
         state.setSteps(stepVMs);
 
-        // Format totals
         state.setTotalDistance(formatDistance(outputData.getTotalDistanceMeters()));
         state.setTotalDuration(formatDuration(outputData.getTotalDurationSeconds()));
 

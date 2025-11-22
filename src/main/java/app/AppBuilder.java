@@ -269,7 +269,7 @@ public class AppBuilder {
 
     public AppBuilder addPlanRouteUseCase() {
         RouteDataAccessInterface routeDAO =
-                new MapsRouteDataAccessObject();
+                new MapsRouteDataAccessObject(landmarkDAO);
 
         PlanRouteOutputBoundary presenter =
                 new PlanRoutePresenter(planRouteViewModel, viewManagerModel);

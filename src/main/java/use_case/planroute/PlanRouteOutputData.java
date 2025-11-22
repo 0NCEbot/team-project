@@ -8,7 +8,7 @@ public class PlanRouteOutputData {
         public final String instruction;
         public final int distanceMeters;
         public final int durationSeconds;
-        public final String landmarkNearby; // optional
+        public final String landmarkNearby;
 
         public RouteStepDTO(String instruction, int distanceMeters,
                             int durationSeconds, String landmarkNearby) {
@@ -26,7 +26,7 @@ public class PlanRouteOutputData {
     private final int totalDurationSeconds;
     private final String errorMessage;
     private final boolean success;
-    private final boolean manualMode; // true if API failed
+    private final boolean manualMode;
 
     public PlanRouteOutputData(String startLocation, String destination,
                                List<RouteStepDTO> steps, int totalDist,
@@ -42,7 +42,6 @@ public class PlanRouteOutputData {
         this.manualMode = manualMode;
     }
 
-    // Getters
     public String getStartLocation() { return startLocation; }
     public String getDestination() { return destination; }
     public List<RouteStepDTO> getSteps() { return steps; }

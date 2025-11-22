@@ -1,17 +1,13 @@
 package data_access;
 
 import entity.RouteStep;
-
 import java.util.List;
 
 public interface RouteDataAccessInterface {
 
-    /**
-     * Fetch route from Google Maps API
-     */
     RouteResponse getRoute(String start, String destination, String[] intermediates);
 
-    public static class RouteResponse {
+    class RouteResponse {
         private final List<RouteStep> steps;
         private final int totalDistanceMeters;
         private final int totalDurationSeconds;

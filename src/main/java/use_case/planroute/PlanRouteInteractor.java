@@ -1,10 +1,8 @@
 package use_case.planroute;
 
-import data_access.RouteDataAccessInterface;
-import entity.Landmark;
-import entity.Location;
-import entity.RouteStep;
 import data_access.LandmarkDataAccessInterface;
+import data_access.RouteDataAccessInterface;
+import entity.RouteStep;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,10 +39,9 @@ public class PlanRouteInteractor implements PlanRouteInputBoundary {
 
         // CALL DAO: Try to fetch route from Google Maps
         try {
-            RouteResponse response = routeDAO.getRoute(start, destination, intermediates);
+            RouteDataAccessInterface.RouteResponse response = routeDAO.getRoute(start, destination, intermediates);
 
             if (response == null || !response.isSuccessful()) {
-                // FALLBACK: Use manual mode
                 handleManualMode(start, destination, intermediates);
                 return;
             }
@@ -59,9 +56,9 @@ public class PlanRouteInteractor implements PlanRouteInputBoundary {
                     steps,
                     response.getTotalDistanceMeters(),
                     response.getTotalDurationSeconds(),
-                    null, // no error
-                    true, // success
-                    false // not manual mode
+                    null,
+                    true,
+                    false
             );
 
             presenter.presentRoute(output);
@@ -73,7 +70,6 @@ public class PlanRouteInteractor implements PlanRouteInputBoundary {
     }
 
     private void handleManualMode(String start, String destination, String[] intermediates) {
-        // Create manual route (no Google Maps)
         List<PlanRouteOutputData.RouteStepDTO> manualSteps = new ArrayList<>();
 
         manualSteps.add(new PlanRouteOutputData.RouteStepDTO(
@@ -100,7 +96,7 @@ public class PlanRouteInteractor implements PlanRouteInputBoundary {
                 0, 0,
                 "API unavailable. Using self-guided mode.",
                 true,
-                true // manual mode
+                true
         );
 
         presenter.presentRoute(output);
@@ -111,17 +107,11 @@ public class PlanRouteInteractor implements PlanRouteInputBoundary {
         for (RouteStep step : steps) {
             dtos.add(new PlanRouteOutputData.RouteStepDTO(
                     step.getInstruction(),
-                    step.getDistanceMeters(),
-                    step.getDurationSeconds(),
-                    findNearbyLandmark(step)
+                    step.getDistance(),
+                    step.getDuration(),
+                    null
             ));
         }
         return dtos;
-    }
-
-    private String findNearbyLandmark(RouteStep step) {
-        // Optional: Find if any landmark is near this step
-        // For now, return null
-        return null;
     }
 }
