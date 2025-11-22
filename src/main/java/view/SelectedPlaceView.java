@@ -135,7 +135,7 @@ public class SelectedPlaceView extends JPanel implements PropertyChangeListener 
         JPanel rightPanel = new JPanel();
         rightPanel.setBackground(Color.WHITE);
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-        rightPanel.setBorder(BorderFactory.createEmptyBorder(40, 0, 40, 60));
+        rightPanel.setBorder(BorderFactory.createEmptyBorder(40, 20, 40, 20));
 
         imageLabel = new JLabel();
         imageLabel.setSize(new Dimension(300, 200));
@@ -162,6 +162,7 @@ public class SelectedPlaceView extends JPanel implements PropertyChangeListener 
         hoursLabel = new JLabel();
         hoursLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         hoursLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        hoursLabel.setVerticalAlignment(SwingConstants.TOP);
 
         rightPanel.add(imageLabel);
         rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
@@ -172,17 +173,25 @@ public class SelectedPlaceView extends JPanel implements PropertyChangeListener 
         rightPanel.add(addressLabel);
         rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         rightPanel.add(hoursLabel);
+        rightPanel.add(Box.createVerticalGlue());
 
         centerPanel.add(leftPanel);
+
+// Wrap scroll in a panel with padding
+        JPanel scrollWrapper = new JPanel(new BorderLayout());
+        scrollWrapper.setBackground(Color.WHITE);
+        scrollWrapper.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 30)); // right padding
+
         JScrollPane scroll = new JScrollPane(
                 rightPanel,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
         );
-        scroll.getVerticalScrollBar().setUnitIncrement(16); // smoother scrolling
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
         scroll.setBorder(null);
 
-        centerPanel.add(scroll);
+        scrollWrapper.add(scroll, BorderLayout.CENTER);
+        centerPanel.add(scrollWrapper);
 
         add(topBar, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);
