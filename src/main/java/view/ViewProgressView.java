@@ -310,7 +310,10 @@ public class ViewProgressView extends JPanel implements PropertyChangeListener {
 
             // Update progress bar
             double completion = Double.parseDouble(
-                    state.getCompletionPercent().replace("%", ""));
+                    state.getCompletionPercent()
+                        .replace("%", "")
+                        .replace(",", ".")
+                );
             progressBar.setValue((int) completion);
 
             // Update last visit label
