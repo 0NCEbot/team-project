@@ -8,11 +8,13 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
 
-    private static final String API_KEY = "AIzaSyCk9bPskLw7eUI-_Y9G6tW8eDAE-iXI8Ms";
+    private static final String API_KEY = "AIzaSyAJi30DYnkCZjnXRYpzWa3L1aToUbHDz2Q____";
     private static final String ROUTES_API_URL = "https://routes.googleapis.com/directions/v2:computeRoutes";
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
@@ -26,9 +28,11 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
     @Override
     public RouteResponse getRoute(String startLocationName, String destinationName, String[] intermediateStopNames) {
         try {
-            // Step 1: Resolve landmark names to coordinates
-            Location startLocation = resolveLandmarkToLocation(startLocationName);
-            Location destinationLocation = resolveLandmarkToLocation(destinationName);
+            // Step 1: Resolve landmark names to coordinates AND track canonical names
+            Map<String, String> nameResolutions = new HashMap<>(); // user input -> canonical name
+
+            Location startLocation = resolveLandmarkToLocation(startLocationName, nameResolutions);
+            Location destinationLocation = resolveLandmarkToLocation(destinationName, nameResolutions);
 
             if (startLocation == null) {
                 System.out.println("[ROUTE DAO] Start location not found: " + startLocationName);
@@ -39,6 +43,10 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
                 return null;
             }
 
+            // Get canonical names (after fuzzy matching)
+            String resolvedStartName = nameResolutions.get(startLocationName);
+            String resolvedDestName = nameResolutions.get(destinationName);
+
             // Step 2: Build a list to track all waypoints with names
             List<String> waypointNames = new ArrayList<>();
             List<Location> waypointLocations = new ArrayList<>();
@@ -46,9 +54,11 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
             // Add intermediates
             if (intermediateStopNames != null) {
                 for (String intermediateName : intermediateStopNames) {
-                    Location loc = resolveLandmarkToLocation(intermediateName);
+                    Location loc = resolveLandmarkToLocation(intermediateName, nameResolutions);
                     if (loc != null) {
-                        waypointNames.add(intermediateName);
+                        // Use the resolved (canonical) name instead of user input
+                        String resolvedName = nameResolutions.get(intermediateName);
+                        waypointNames.add(resolvedName);
                         waypointLocations.add(loc);
                     }
                 }
@@ -64,12 +74,12 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
                 return null;
             }
 
-            // Step 5: Parse response with landmark information
+            // Step 5: Parse response with RESOLVED landmark names
             List<RouteStep> steps = extractStepsWithLandmarks(
                     responseJson,
-                    startLocationName,
-                    destinationName,
-                    waypointNames
+                    resolvedStartName,      // Use resolved name
+                    resolvedDestName,       // Use resolved name
+                    waypointNames           // Already resolved
             );
 
             int totalDistance = responseJson
@@ -93,9 +103,9 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
 
     /**
      * Resolve a landmark name to coordinates using fuzzy matching.
-     * If exact match fails, tries case-insensitive and partial matching.
+     * Stores the canonical name in nameResolutions map for later use.
      */
-    private Location resolveLandmarkToLocation(String landmarkName) {
+    private Location resolveLandmarkToLocation(String landmarkName, Map<String, String> nameResolutions) {
         if (landmarkName == null || landmarkName.isBlank()) {
             return null;
         }
@@ -103,6 +113,8 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
         // Try exact match (case-insensitive)
         for (var landmark : landmarkDAO.getLandmarks()) {
             if (landmark.getLandmarkName().equalsIgnoreCase(landmarkName.trim())) {
+                // Store the mapping: user input -> canonical name
+                nameResolutions.put(landmarkName, landmark.getLandmarkName());
                 return landmark.getLocation();
             }
         }
@@ -112,6 +124,8 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
         for (var landmark : landmarkDAO.getLandmarks()) {
             if (landmark.getLandmarkName().toLowerCase().contains(lowerQuery)) {
                 System.out.println("[ROUTE DAO] Partial matched '" + landmarkName + "' to '" + landmark.getLandmarkName() + "'");
+                // Store the mapping: user input -> canonical name
+                nameResolutions.put(landmarkName, landmark.getLandmarkName());
                 return landmark.getLocation();
             }
         }
@@ -125,14 +139,14 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
     private String buildRouteRequest(Location start, Location destination, Location[] intermediates) {
         JSONObject request = new JSONObject();
 
-        // Origin - FIXED: wrap in "location" object with "latLng"
+        // Origin - wrap in "location" object with "latLng"
         JSONObject origin = new JSONObject();
         JSONObject originLocation = new JSONObject();
         originLocation.put("latLng", createLatLngJson(start));
         origin.put("location", originLocation);
         request.put("origin", origin);
 
-        // Destination - FIXED: wrap in "location" object with "latLng"
+        // Destination - wrap in "location" object with "latLng"
         JSONObject dest = new JSONObject();
         JSONObject destLocation = new JSONObject();
         destLocation.put("latLng", createLatLngJson(destination));
@@ -156,7 +170,7 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
             }
         }
 
-        // Travel mode and field mask
+        // Travel mode
         request.put("travelMode", "WALK");
 
         return request.toString();
@@ -225,7 +239,7 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
 
             int stepIndex = 0;
 
-            // Add START landmark step
+            // Add START landmark step (using canonical name)
             steps.add(new RouteStep(stepIndex++, "📍 " + startName, 0, 0));
 
             // Process each leg (there will be N+1 legs for N intermediates)
@@ -245,13 +259,13 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
                     }
                 }
 
-                // After each leg (except the last), add intermediate landmark
+                // After each leg (except the last), add intermediate landmark (using canonical name)
                 if (legIdx < intermediateNames.size()) {
                     steps.add(new RouteStep(stepIndex++, "📍 " + intermediateNames.get(legIdx), 0, 0));
                 }
             }
 
-            // Add END landmark step
+            // Add END landmark step (using canonical name)
             steps.add(new RouteStep(stepIndex++, "📍 " + destName, 0, 0));
 
         } catch (Exception e) {
@@ -262,64 +276,7 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
     }
 
     /**
-     * Extract individual route steps from the API response.
-     * The response has structure: routes[0].legs[0].steps[0..n]
-     */
-    private List<RouteStep> extractSteps(JSONObject responseJson) {
-        List<RouteStep> steps = new ArrayList<>();
-
-        try {
-            JSONArray routes = responseJson.optJSONArray("routes");
-            if (routes == null || routes.length() == 0) {
-                return steps;
-            }
-
-            JSONObject route = routes.getJSONObject(0);
-            JSONArray legs = route.optJSONArray("legs");
-            if (legs == null) {
-                return steps;
-            }
-
-            int stepIndex = 0;
-
-            // Each leg can have multiple steps
-            for (int legIdx = 0; legIdx < legs.length(); legIdx++) {
-                JSONObject leg = legs.getJSONObject(legIdx);
-                JSONArray stepsArray = leg.optJSONArray("steps");
-
-                if (stepsArray == null) {
-                    continue;
-                }
-
-                // Process each step in the leg
-                for (int stepIdx = 0; stepIdx < stepsArray.length(); stepIdx++) {
-                    JSONObject stepJson = stepsArray.getJSONObject(stepIdx);
-
-                    // Extract instruction (from navigationInstruction)
-                    String instruction = extractInstruction(stepJson);
-
-                    // Extract distance in meters
-                    int distanceMeters = stepJson.optInt("distanceMeters", 0);
-
-                    // Extract duration in seconds (from staticDuration, e.g. "45s")
-                    int durationSeconds = extractDurationSeconds(stepJson);
-
-                    RouteStep step = new RouteStep(stepIndex, instruction, distanceMeters, durationSeconds);
-                    steps.add(step);
-                    stepIndex++;
-                }
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return steps;
-    }
-
-    /**
      * Extract the human-readable instruction from a step.
-     * Format: "Turn right onto St. George Street" or "Head northwest"
      */
     private String extractInstruction(JSONObject stepJson) {
         try {
@@ -327,9 +284,6 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
             if (navInstruction != null) {
                 String instructions = navInstruction.optString("instructions", "");
                 if (!instructions.isEmpty()) {
-                    // Replace newlines with dashes for better readability
-                    // e.g., "Turn left\nRestricted usage road\nDestination will be on the right"
-                    //    -> "Turn left - Restricted usage road - Destination will be on the right"
                     return instructions.replace("\n", " - ");
                 }
             }
@@ -358,17 +312,14 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
 
     /**
      * Parse duration from staticDuration field (e.g. "45s" or "2 mins")
-     * Returns seconds as an integer.
      */
     private int extractDurationSeconds(JSONObject stepJson) {
         try {
-            // Try to get from staticDuration field first
             String staticDuration = stepJson.optString("staticDuration", "");
             if (!staticDuration.isEmpty()) {
                 return parseDurationToSeconds(staticDuration);
             }
 
-            // Fallback to localizedValues
             JSONObject localizedValues = stepJson.optJSONObject("localizedValues");
             if (localizedValues != null) {
                 JSONObject duration = localizedValues.optJSONObject("staticDuration");
@@ -386,7 +337,6 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
 
     /**
      * Parse duration strings like "45s", "1 min", "2 mins" into seconds.
-     * Also handles ISO format like "427s".
      */
     private int parseDurationToSeconds(String durationStr) {
         if (durationStr == null || durationStr.isBlank()) {
