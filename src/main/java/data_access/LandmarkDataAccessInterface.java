@@ -2,10 +2,16 @@
 package data_access;
 
 import entity.Landmark;
+import use_case.viewprogress.ViewProgressLandmarkDataAccessInterface;
 
 import java.util.List;
 
-public interface LandmarkDataAccessInterface {
+/**
+ * Data Access Interface for landmark operations.
+ * Extends ViewProgressLandmarkDataAccessInterface to support the View Progress use case.
+ * This follows the Interface Segregation Principle by extending specific use case interfaces.
+ */
+public interface LandmarkDataAccessInterface extends ViewProgressLandmarkDataAccessInterface {
 
     /**
      * Get a list of landmarks.

@@ -14,8 +14,7 @@ public class HomescreenInteractor implements HomescreenInputBoundary {
         //just logs the action - no navigation yet
         System.out.println("Action received: " + action);
 
-        // Don't navigate anywhere yet since views don't exist
-        // When you create the views, you'll uncomment this:
+        // Map actions to target views
         String targetView = "";
         switch (action) {
             case "browse landmarks":

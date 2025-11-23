@@ -11,6 +11,8 @@ public class Main {
                 .addSelectedPlaceView()
                 .addSelectedPlaceUseCase()
                 .addBrowseLandmarksView()
+                .addViewHistoryView()
+                .addViewProgressView()  // Add View Progress view
                 .addHomescreenView()
                 .addLoginView()
                 .addSignupView()
