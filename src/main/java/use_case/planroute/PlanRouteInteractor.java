@@ -41,14 +41,25 @@ public class PlanRouteInteractor implements PlanRouteInputBoundary {
         try {
             RouteDataAccessInterface.RouteResponse response = routeDAO.getRoute(start, destination, intermediates);
 
-            if (response == null || !response.isSuccessful()) {
-                handleManualMode(start, destination, intermediates);
+            if (response == null) {
+                presenter.presentError("Failed to plan route. Please try again.");
                 return;
             }
 
-            // PROCESS: Convert DAO response to output data
-            List<PlanRouteOutputData.RouteStepDTO> steps =
-                    convertStepsToDTO(response.getSteps());
+            // Check if the request was successful
+            if (!response.isSuccessful()) {
+                // DAO already validated landmarks and provided a user-friendly error message
+                String errorMsg = response.getErrorMessage();
+                if (errorMsg != null && !errorMsg.isEmpty()) {
+                    presenter.presentError(errorMsg);
+                } else {
+                    presenter.presentError("Failed to plan route. Please try again.");
+                }
+                return;
+            }
+
+            // SUCCESS: Convert DAO response to output data
+            List<PlanRouteOutputData.RouteStepDTO> steps = convertStepsToDTO(response.getSteps());
 
             PlanRouteOutputData output = new PlanRouteOutputData(
                     start,
@@ -58,57 +69,15 @@ public class PlanRouteInteractor implements PlanRouteInputBoundary {
                     response.getTotalDurationSeconds(),
                     null,
                     true,
-                    false
+                    response.isManualMode()
             );
 
             presenter.presentRoute(output);
 
         } catch (Exception e) {
             e.printStackTrace();
-            handleManualMode(start, destination, intermediates);
+            presenter.presentError("An error occurred while planning the route. Please try again.");
         }
-    }
-
-    private void handleManualMode(String start, String destination, String[] intermediates) {
-        List<PlanRouteOutputData.RouteStepDTO> manualSteps = new ArrayList<>();
-
-        manualSteps.add(new PlanRouteOutputData.RouteStepDTO(
-                "📍 " + start,
-                0, 0, start, true
-        ));
-
-        for (String intermediate : intermediates) {
-            manualSteps.add(new PlanRouteOutputData.RouteStepDTO(
-                    "Visit: " + intermediate,
-                    0, 0, null, false
-            ));
-            manualSteps.add(new PlanRouteOutputData.RouteStepDTO(
-                    "📍 " + intermediate,
-                    0, 0, intermediate, true
-            ));
-        }
-
-        manualSteps.add(new PlanRouteOutputData.RouteStepDTO(
-                "Navigate to: " + destination,
-                0, 0, null, false
-        ));
-
-        manualSteps.add(new PlanRouteOutputData.RouteStepDTO(
-                "📍 " + destination,
-                0, 0, destination, true
-        ));
-
-        PlanRouteOutputData output = new PlanRouteOutputData(
-                start,
-                destination,
-                manualSteps,
-                0, 0,
-                "API unavailable. Using self-guided mode.",
-                true,
-                true
-        );
-
-        presenter.presentRoute(output);
     }
 
     private List<PlanRouteOutputData.RouteStepDTO> convertStepsToDTO(List<RouteStep> steps) {

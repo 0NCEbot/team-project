@@ -107,7 +107,7 @@ public class MapsRouteDataAccessObject implements RouteDataAccessInterface {
                     .getString("duration");
             int totalDuration = parseDurationToSeconds(durationStr);
 
-            return new RouteResponse(steps, totalDistance, totalDuration, true, null);
+            return new RouteResponse(steps, totalDistance, totalDuration, true, null, false);
 
         } catch (Exception e) {
             e.printStackTrace();
